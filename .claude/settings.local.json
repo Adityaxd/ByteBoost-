@@ -17,7 +17,10 @@
       "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install razorpay)",
       "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install email-validator)",
       "Bash(curl:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
