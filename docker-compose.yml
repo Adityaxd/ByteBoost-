@@ -1,0 +1,173 @@
+version: "3.9"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: byteboost-postgres
+    environment:
+      POSTGRES_DB: byteboost
+      POSTGRES_USER: byteboost_user
+      POSTGRES_PASSWORD: byteboost_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U byteboost_user -d byteboost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: byteboost-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: byteboost-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://byteboost_user:byteboost_pass@postgres:5432/byteboost
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      SECRET_KEY: your-development-secret-key-change-in-production
+      DEBUG: "true"
+      ENVIRONMENT: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: byteboost-celery-worker
+    environment:
+      DATABASE_URL: postgresql+psycopg://byteboost_user:byteboost_pass@postgres:5432/byteboost
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - ./apps/api:/app
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A app.workers.celery_app worker --loglevel=info
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: byteboost-celery-beat
+    environment:
+      DATABASE_URL: postgresql+psycopg://byteboost_user:byteboost_pass@postgres:5432/byteboost
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - ./apps/api:/app
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A app.workers.celery_app beat --loglevel=info
+
+  # LiveKit Server (Optional - for local development)
+  livekit:
+    image: livekit/livekit-server:latest
+    container_name: byteboost-livekit
+    command: --config /etc/livekit.yaml
+    ports:
+      - "7880:7880"  # WebRTC
+      - "7881:7881"  # HTTP API
+      - "7882:7882"  # WebSocket
+    volumes:
+      - ./config/livekit.yaml:/etc/livekit.yaml
+    environment:
+      LIVEKIT_API_KEY: devkey
+      LIVEKIT_API_SECRET: devsecret
+
+  # CoTURN Server (for WebRTC NAT traversal)
+  coturn:
+    image: coturn/coturn:latest
+    container_name: byteboost-coturn
+    network_mode: host
+    command: |
+      -n
+      --listening-port=3478
+      --tls-listening-port=5349
+      --realm=byteboost.local
+      --server-name=byteboost.local
+      --fingerprint
+      --lt-cred-mech
+      --user=byteboost:byteboost123
+      --no-stdout-log
+
+  # pgAdmin (Optional - Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: byteboost-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@byteboost.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+  # MinIO (Optional - Local S3-compatible storage for development)
+  minio:
+    image: minio/minio:latest
+    container_name: byteboost-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  redis_data:
+  pgadmin_data:
+  minio_data:
+
+networks:
+  default:
+    name: byteboost-network
+    driver: bridge

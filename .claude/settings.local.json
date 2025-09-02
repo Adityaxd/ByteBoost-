@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell:*)",
+      "Bash(dir:*)",
+      "WebSearch",
+      "Bash(docker:*)",
+      "Bash(python:*)",
+      "Bash(venvScripts:*)",
+      "Bash(pip install:*)",
+      "Bash(.venvScriptspython.exe -m pip install --upgrade pip)",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\python.exe\" -m pip install --upgrade pip)",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install -r requirements.txt)",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\uvicorn.exe\" app.main:app --reload --host 0.0.0.0 --port 8000)",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install itsdangerous)",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install \"sentry-sdk[fastapi]>=2.0.0\")",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install razorpay)",
+      "Bash(\"C:\\Users\\Aditya\\Desktop\\ByteBoost\\ByteBoost\\apps\\api\\venv\\Scripts\\pip.exe\" install email-validator)",
+      "Bash(curl:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

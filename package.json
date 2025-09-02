@@ -1,0 +1,30 @@
+{
+  "name": "byteboost",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E-Learning Platform with video courses and live classes",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:web": "cd apps/web && npm run dev",
+    "build": "npm run build:web",
+    "build:web": "cd apps/web && npm run build",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": "cd apps/api && pytest",
+    "test:web": "cd apps/web && npm test",
+    "lint": "npm run lint:api && npm run lint:web",
+    "lint:api": "cd apps/api && ruff check .",
+    "lint:web": "cd apps/web && npm run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
